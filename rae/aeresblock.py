@@ -14,14 +14,14 @@ class BasicBlockEncoder(nn.Module):
     self.conv_res = None
     if self.downsample or in_channels != out_channels:
       self.conv_res = nn.Conv1d(in_channels, out_channels,
-                                1, 1, 0, bias=True, padding_mode="circular")
+                                1, 1, 0, bias=True)
 
     self.in0 = nn.InstanceNorm1d(in_channels)
     self.conv0 = nn.Conv1d(in_channels, out_channels, kernel_size,
-                           stride, padding, bias=True, padding_mode="circular")
+                           stride, padding, bias=True)
     self.in1 = nn.InstanceNorm1d(in_channels)
     self.conv1 = nn.Conv1d(out_channels, out_channels, kernel_size,
-                           stride, padding, bias=True, padding_mode="circular")
+                           stride, padding, bias=True)
 
   def forward(self, x):
     residual = x
@@ -51,14 +51,14 @@ class FirstBlockEncoder(nn.Module):
     self.activation = activation
 
     self.conv_res = nn.Conv1d(in_channels, out_channels,
-                              1, 1, 0, bias=True, padding_mode="circular")
+                              1, 1, 0, bias=True)
     self.in0 = nn.InstanceNorm1d(in_channels)
     self.conv0 = nn.Conv1d(in_channels, out_channels, kernel_size,
-                           stride, padding, bias=True, padding_mode="circular")
+                           stride, padding, bias=True)
 
     self.in1 = nn.InstanceNorm1d(in_channels)
     self.conv1 = nn.Conv1d(out_channels, out_channels, kernel_size,
-                           stride, padding, bias=True, padding_mode="circular")
+                           stride, padding, bias=True)
 
   def forward(self, x):
     residual = self.conv_res(x)
@@ -84,15 +84,15 @@ class BasicBlockDecoder(nn.Module):
     self.conv_res = None
     if self.upsample or in_channels != out_channels:
       self.conv_res = nn.Conv1d(in_channels, out_channels,
-                                1, 1, 0, bias=False, padding_mode="circular")
+                                1, 1, 0, bias=False)
 
     self.in0 = nn.InstanceNorm1d(in_channels)
     self.conv0 = nn.Conv1d(in_channels, out_channels, kernel_size,
-                           stride, padding, bias=False, padding_mode="circular")
+                           stride, padding, bias=False)
 
     self.in1 = nn.InstanceNorm1d(out_channels)
     self.conv1 = nn.Conv1d(out_channels, out_channels, kernel_size,
-                           stride, padding, bias=False, padding_mode="circular")
+                           stride, padding, bias=False)
 
   def forward(self, x):
     residual = x

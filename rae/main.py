@@ -31,16 +31,12 @@ def parse_args():
     parser.add_argument("--resume", type=str, default="",
                         help="path to the latest checkpoint (default: none)")
 
-    parser.add_argument("--data-size", type=int, default=800,
-                        help="volume data (default: 800)")
-    parser.add_argument("--img-size", type=int, default=512,
-                        help="volume data (default: 512)")
     parser.add_argument("--latent-dim", type=int, default=3,
                         help="latent vector dimension(default: 3)")
     parser.add_argument("--ch", type=int, default=64,
                         help="channel multiplier (default: 64)")
     parser.add_argument("--direction", type=str, required=True,
-                        help="parallel direction: x, y or z")
+                        help="parallel direction: depth, lat or lon")
 
     parser.add_argument("--sn", action="store_true", default=False,
                         help="enable spectral normalization")
@@ -83,13 +79,11 @@ def main(args):
     # data loader
     train_dataset = SeqDataset(
         root=args.root,
-        data_size = args.data_size,
-        img_size = args.img_size,
         direction=args.direction,
         train=True,
         transform=transforms.Compose([Normalize(), ToTensor()]))
 
-    kwargs = {"num_workers": 4, "pin_memory": True}
+    kwargs = {"num_workers": 2, "pin_memory": True}
     train_loader = DataLoader(train_dataset, batch_size=args.load_batch,
                               shuffle=False, **kwargs)
 
@@ -152,16 +146,19 @@ def main(args):
     num_bins = 10
 
     # main loop
+    AE.train()
     for epoch in range(args.start_epoch, args.epochs):
-        AE.train()
         cursor_batch = 0
         for i, sample in enumerate(train_loader):
             data = sample["data"]
+            mask = sample["mask"]
             data = data.reshape((-1, data.shape[-1])).cuda(non_blocking=True)
+            mask = mask.reshape((-1, mask.shape[-1])).cuda(non_blocking=True)
             data = data.unsqueeze(1)
+            mask = mask.unsqueeze(1)
             indices = torch.randperm(data.shape[0])
             if args.weighted:
-                freq = torch.histc(data, bins=10, min=-1., max=1.)
+                freq = torch.histc(data, bins=num_bins, min=-1., max=1.)
                 importance = 1. / freq / num_bins
 
             num_batch = (indices.shape[0] - 1) // args.batch_size + 1
@@ -169,11 +166,14 @@ def main(args):
             for j in range(num_batch):
                 if j == num_batch - 1:
                     sub_data = data[indices[j * args.batch_size: data.shape[0]]]
+                    sub_mask = mask[indices[j * args.batch_size: data.shape[0]]]
                 else:
                     sub_data = data[indices[j * args.batch_size: (j+1) * args.batch_size]]
+                    sub_mask = mask[indices[j * args.batch_size: (j+1) * args.batch_size]]
                 optimizer.zero_grad()
+                sub_data[sub_mask] = -1.
                 fake_data = AE(sub_data)
-                loss = l1_criterion(sub_data, fake_data)
+                loss = l1_criterion(sub_data, fake_data) * (~sub_mask)
                 if args.weighted:
                     importance_idx = ((sub_data + 1.) / 2. * num_bins).type(torch.long)
                     sub_importance = importance[importance_idx]
@@ -210,7 +210,7 @@ def main(args):
                         "decoder_state_dict": decoder.state_dict(),
                         "train_losses": train_losses,
                         "test_losses": test_losses},
-                       os.path.join(args.root, "autoencoder_" + str(epoch + 1) + ".pth.tar"))
+                       os.path.join(args.root, "vp" + args.direction, "autoencoder_" + str(epoch + 1) + ".pth.tar"))
 
 if __name__ == "__main__":
   main(parse_args())

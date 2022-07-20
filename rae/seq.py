@@ -10,7 +10,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 
 class SeqDataset(Dataset):
-    def __init__(self, root, data_size, img_size, direction, train=True, data_len=0, transform=None):
+    def __init__(self, root, direction,  train=True, data_len=0, transform=None):
         if train:
             fh = open(os.path.join(root, "train", "names0.txt"))
         else:
@@ -25,8 +25,9 @@ class SeqDataset(Dataset):
         self.data_len = data_len
         self.transform = transform
         self.filenames = filenames
-        self.data_size = data_size
-        self.img_size = img_size
+        self.depth_shape = 768
+        self.lat_shape = 768
+        self.lon_shape = 1536
 
     def __len__(self):
         if self.data_len:
@@ -45,18 +46,18 @@ class SeqDataset(Dataset):
         else:
             data_name = os.path.join(self.root, "train", filename + ".bin")
 
-
-        data = np.fromfile(data_name, dtype=np.float32)
-        if self.direction == "x":
-            data = data.reshape((self.img_size, self.img_size, self.data_size))
-        if self.direction == "y":
-            data = data.reshape((self.img_size, self.data_size, self.img_size))
+        data = np.fromfile(data_name, dtype=np.float32).reshape((self.depth_shape, self.lat_shape, self.lon_shape))
+        if self.direction == "lon":
+            data = data.reshape((-1, self.lon_shape))
+        if self.direction == "lat":
             data = np.transpose(data, (0, 2, 1))
-        elif self.direction == "z":
-            data = data.reshape((self.data_size, self.img_size, self.img_size))
+            data = data.reshape((-1, self.lat_shape))
+        elif self.direction == "depth":
             data = np.transpose(data, (1, 2, 0))
+            data = data.reshape((-1, self.depth_shape))
+        mask = data < 10.
 
-        sample = {"name": filename, "data": data}
+        sample = {"name": filename, "data": data, "mask": mask}
 
         if self.transform:
             sample = self.transform(sample)
@@ -67,22 +68,26 @@ class Normalize(object):
     def __call__(self, sample):
         name = sample["name"]
         data = sample["data"]
-        dmin = 8.6
-        dmax = 13.6
+        mask = sample["mask"]
 
-        data = np.log10(data)
+        dmin = 10.09
+        dmax = 29.85
         data = (data.astype(np.float32) - (dmax + dmin) / 2.) / ((dmax - dmin) / 2.)
 
-        return {"name": name, "data": data}
+        return {"name": name, "data": data, "mask": mask}
 
 class ToTensor(object):
     def __call__(self, sample):
         name = sample["name"]
         data = sample["data"]
+        mask = sample["mask"]
 
         # dimension raising
         # numpy shape: [N, ]
         # torch shape: [1, N]
         data = data[None, :]
+        mask = mask[None, :]
+        assert data.shape[0] == 1
         return {"name": name,
-                "data": torch.from_numpy(data)}
+                "data": torch.from_numpy(data),
+                "mask": torch.from_numpy(mask)}

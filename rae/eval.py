@@ -31,16 +31,12 @@ def parse_args():
     parser.add_argument("--resume", type=str, default="",
                         help="path to the latest checkpoint (default: none)")
 
-    parser.add_argument("--data-size", type=int, default=800,
-                        help="volume data (default: 800)")
-    parser.add_argument("--img-size", type=int, default=512,
-                        help="volume data (default: 512)")
     parser.add_argument("--latent-dim", type=int, default=3,
                         help="latent vector dimension(default: 3)")
     parser.add_argument("--ch", type=int, default=64,
                         help="channel multiplier (default: 64)")
     parser.add_argument("--direction", type=str, required=True,
-                        help="parallel direction: x, y or z")
+                        help="parallel direction: depth, lat or lon")
 
     parser.add_argument("--sn", action="store_true", default=False,
                         help="enable spectral normalization")
@@ -66,17 +62,13 @@ def main(args):
     # data loader
     train_dataset = SeqDataset(
         root=args.root,
-        train=True,
-        data_size=args.data_size,
-        img_size=args.img_size,
         direction=args.direction,
+        train=True,
         transform=transforms.Compose([Normalize(), ToTensor()]))
     test_dataset = SeqDataset(
         root=args.root,
-        train=False,
-        data_size=args.data_size,
-        img_size=args.img_size,
         direction=args.direction,
+        train=False,
         transform=transforms.Compose([Normalize(), ToTensor()]))
 
     kwargs = {"num_workers": 2, "pin_memory": True}
@@ -117,13 +109,12 @@ def main(args):
               .format(args.resume, checkpoint["epoch"]))
         del checkpoint
 
-    mse_criterion = nn.MSELoss().cuda()
-    train_losses, test_losses = [], []
+    mse_criterion = nn.MSELoss(reduction="none").cuda()
 
     reduce_size = 16
 
-    dmin = 8.6
-    dmax = 13.6
+    dmin = 10.09
+    dmax = 29.85
 
     mse = 0.
     psnrs = np.zeros(len(test_loader.dataset))
@@ -134,9 +125,12 @@ def main(args):
     with torch.no_grad():
         num_seq = 0
         for i, sample in enumerate(test_loader):
-            raw = sample["data"][0]
-            data = raw.reshape((-1, raw.shape[-1])).cuda(non_blocking=True)
+            data = sample["data"][0]
+            mask = sample["mask"][0]
+            data = data.reshape((-1, data.shape[-1])).cuda(non_blocking=True)
+            mask = mask.reshape((-1, mask.shape[-1])).cuda(non_blocking=True)
             data = data.unsqueeze(1)
+            mask = mask.unsqueeze(1)
             indices = torch.arange(data.shape[0])
             num_seq += indices.shape[0]
 
@@ -147,8 +141,11 @@ def main(args):
             for j in range(num_batch):
                 if j == num_batch - 1:
                     sub_data = data[indices[j * args.batch_size: data.shape[0]]]
+                    sub_mask = mask[indices[j * args.batch_size: data.shape[0]]]
                 else:
                     sub_data = data[indices[j * args.batch_size: (j + 1) * args.batch_size]]
+                    sub_mask = mask[indices[j * args.batch_size: (j + 1) * args.batch_size]]
+                sub_data[sub_mask] = -1.
                 sub_compressed = encoder(sub_data)
                 sub_recon = decoder(sub_compressed)
                 if j == num_batch - 1:
@@ -158,23 +155,23 @@ def main(args):
                     compressed[indices[j * args.batch_size: (j + 1) * args.batch_size]] = sub_compressed
                     recon[indices[j * args.batch_size: (j + 1) * args.batch_size]] = sub_recon[:, 0, :]
                 del sub_data, sub_compressed, sub_recon
-            recon = recon * ((dmax - dmin) / 2.) + (dmax + dmin) / 2.
-            data = data[:, 0] * ((dmax - dmin) / 2.) + (dmax + dmin) / 2.
-            loss = mse_criterion(data, recon)
+            data = data[:, 0]
+            mask = mask[:, 0]
+            loss = (mse_criterion(data, recon) * ~mask).sum() / (~mask).sum()
             mse += loss.item()
-            psnrs[i] = 20. * np.log10(dmax - dmin) - 10. * np.log10(loss.item())
-            diff = abs(data - recon)
-            max_diff[i] = diff.max().item() / (dmax - dmin)
+            psnrs[i] = 20. * np.log10(2.) - 10. * np.log10(loss.item())
+            diff = abs(data * ~mask - recon * ~mask)
+            max_diff[i] = diff.max().item() / 2.
             print(sample["name"], psnrs[i], max_diff[i])
+            # print(sample["name"])
 
             if args.save:
                 compressed = compressed.permute((0, 2, 1))  # data.shape[0], feat_size, args.latent_dim
                 compressed = compressed.cpu().numpy().astype(np.float32)
-                compressed.tofile(os.path.join(args.root, "vp" + args.direction, "train_compressed", sample["name"][0] + ".bin"))
-                # pdb.set_trace()
+                np.save(os.path.join(args.root, "vp" + args.direction, "train_compressed", sample["name"][0]), compressed)
                 # recon = recon.cpu().numpy().astype(np.float32)
                 # recon = np.power(10., recon)
-                # recon.tofile(os.path.join(args.root, "test_recon", sample["name"][0] + ".bin"))
+                # recon.tofile(os.path.join(args.root, "train_recon_noweight", sample["name"][0] + ".bin"))
 
             del recon
             del compressed
