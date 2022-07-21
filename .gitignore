@@ -134,3 +134,6 @@ convae_3d
 *.log
 eval
 data_preparation
+insitu_net
+vdsurro
+visurro
