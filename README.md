@@ -6,7 +6,7 @@ This branch is for the Nyx dataset.
 
 ### View-Dependent Latent Generation
 
-<img src="https://github.com/trainsn/VDL-Surrogate/blob/Nyx/image/overview(a1).jpg" width="70%">
+<img src="https://github.com/trainsn/VDL-Surrogate/blob/Nyx/image/overview(a1).jpg" width="80%">
 
 Given a sampled view-dependent data and a selected viewpoint, we train a train a Ray AntoEncoder (RAE):
 
@@ -27,7 +27,7 @@ python main.py --root dataset \
 
 ### VDL-Predictor Training
 
-<img src="https://github.com/trainsn/VDL-Surrogate/blob/Nyx/image/overview(a2).jpg" width="35%">
+<img src="https://github.com/trainsn/VDL-Surrogate/blob/Nyx/image/overview(a2).jpg" width="40%">
 
 Given the same selected viewpoint, we train a VDL-Predictor, which takes the simulation parameters as input and output predicted view-dependent latent representations:
 
@@ -46,7 +46,7 @@ python main.py --root dataset \
 
 ###  Model Inference
 
-<img src="https://github.com/trainsn/VDL-Surrogate/blob/Nyx/image/overview(b).jpg" width="20%">
+<img src="https://github.com/trainsn/VDL-Surrogate/blob/Nyx/image/overview(b).jpg" width="23%">
 
 Given the same selected viewpoint, we feed a new simulation parameter into the corresponding trained VDL-Predictor for a predicted view-dependent latent presentation and decode the latent representation by the trained RAE decoder to data space for visualization.
 
