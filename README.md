@@ -82,8 +82,16 @@ python infer.py --root dataset \
                --h H
 ```
 
+Having the predicted view-dependent data, consider using the following repo for visualizatoin: 
+[VolumeRenderer_Nyx](https://github.com/trainsn/VolumeRenderer/tree/nyx_vr_fuse).
 
+To evalute the quality of generated visualizion images, run:
+```
+cd vdl_predictor
+python eval_img.py --root path/to/dataset/root \
+                   --tf transfer_function_id \ 
+                   --mode sub_directory/to/images
+```
 
-
-
-
+## Acknowledgments
+Our code is inspired by [InSituNet](https://github.com/hewenbin/insitu_net).
