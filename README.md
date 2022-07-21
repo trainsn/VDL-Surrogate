@@ -29,7 +29,7 @@ python main.py --root dataset \
 
 <img src="https://github.com/trainsn/VDL-Surrogate/blob/Nyx/image/overview(a2).jpg" width="35%">
 
-We train a VDL-Predictor, which takes the simulation parameters as input and output predicted view-dependent latent representations:
+Given the same selected viewpoint, we train a VDL-Predictor, which takes the simulation parameters as input and output predicted view-dependent latent representations:
 
 ```
 cd vdl_predictor
@@ -43,6 +43,46 @@ python main.py --root dataset \
                --check-every 25 \
                --log-every 20
 ```
+
+###  Model Inference
+
+<img src="https://github.com/trainsn/VDL-Surrogate/blob/Nyx/image/overview(b).jpg" width="20%">
+
+Given the same selected viewpoint, we feed a new simulation parameter into the corresponding trained VDL-Predictor for a predicted view-dependent latent presentation and decode the latent representation by the trained RAE decoder to data space for visualization.
+
+To evaluate VDL-Surrogate on the testing dataset, run 
+```
+cd vdl_predictor
+python eval.py --root dataset \
+               --direction x, y, or z \
+               --sn \
+               --data-size L_0 \
+               --img-size H(==W) \
+               --ch 64 \
+               --resume path_to_trained_VDL-Predictor \
+               --ae-resume path_to_trained_RAE \  
+               --batch-size 2048 
+```
+
+To predict the simulation output given a particular simulation parameter setting, run 
+
+```
+cd vdl_predictor
+python infer.py --root dataset \
+               --direction x, y, or z \
+               --sn \
+               --data-size L_0 \
+               --img-size H(==W) \
+               --ch 64 \
+               --resume path_to_trained_VDL-Predictor \
+               --ae-resume path_to_trained_RAE \  
+               --batch-size 2048 \
+               --omm OmM \
+               --omb OmB \
+               --h H
+```
+
+
 
 
 
