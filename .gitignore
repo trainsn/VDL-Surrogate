@@ -131,3 +131,6 @@ dmypy.json
 convae_3d
 *.sh
 *.o*
+*.log
+eval
+data_preparation
