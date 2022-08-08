@@ -93,5 +93,18 @@ python eval_img.py --root path/to/dataset/root \
                    --mode sub_directory/to/images
 ```
 
+## Citation
+
+If you use this code for your research, please cite our paper.
+```
+@article{shi2022vdl,
+  title={VDL-Surrogate: A View-Dependent Latent-based Model for Parameter Space Exploration of Ensemble Simulations},
+  author={Shi, Neng and Xu, Jiayi and Guo, Hanqi and Woodring, Jonathan and Shen, Han-Wei},
+  journal={arXiv e-prints},
+  pages={arXiv--2207},
+  year={2022}
+}
+```
+
 ## Acknowledgments
 Our code is inspired by [InSituNet](https://github.com/hewenbin/insitu_net).
