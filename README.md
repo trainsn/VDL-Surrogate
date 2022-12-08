@@ -93,8 +93,9 @@ If you use this code for your research, please cite our paper.
 @article{shi2022vdl,
   title={VDL-Surrogate: A View-Dependent Latent-based Model for Parameter Space Exploration of Ensemble Simulations},
   author={Shi, Neng and Xu, Jiayi and Li, Haoyu and Guo, Hanqi and Woodring, Jonathan and Shen, Han-Wei},
-  journal={arXiv preprint arXiv:2207.13091},
-  year={2022}
+  journal={IEEE Transactions on Visualization and Computer Graphics},
+  year={2022},
+  publisher={IEEE}
 }
 ```
 
