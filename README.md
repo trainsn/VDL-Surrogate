@@ -8,7 +8,7 @@ This branch is for the Nyx dataset.
 
 <img src="https://github.com/trainsn/VDL-Surrogate/blob/Nyx/image/overview(a1).jpg" width="80%">
 
-Given a sampled view-dependent data and a selected viewpoint, we train a train a Ray AntoEncoder (RAE):
+Given sampled view-dependent data and a selected viewpoint, we train a Ray AntoEncoder (RAE):
 
 ```
 cd rae
@@ -82,10 +82,10 @@ python infer.py --root dataset \
                --h H
 ```
 
-Having the predicted view-dependent data, consider using the following repo for visualizatoin: 
+Having the predicted view-dependent data, consider using the following repo for visualization: 
 [VolumeRenderer_Nyx](https://github.com/trainsn/VolumeRenderer/tree/nyx_vr_fuse).
 
-To evalute the quality of generated visualizion images, run:
+To evaluate the quality of generated visualization images, run:
 ```
 cd vdl_predictor
 python eval_img.py --root path/to/dataset/root \
